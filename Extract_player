@@ -1,0 +1,82 @@
+## This will help to extract the table from webpage using selenium
+
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+import pandas as pd
+
+#options = webdriver.ChromeOptions()
+data =[]
+data1=[]
+def get_pages(pages):
+    for page in range(1,pages+1):
+        driver = webdriver.Chrome()
+        # go to specific webpage
+        if(page==1):
+            driver.get('https://www.transfermarkt.com/transfers/saisontransfers/statistik?land_id=0&ausrichtung=&spielerposition_id=&altersklasse=&leihe=&transferfenster=&saison-id=0&plus='+str(page))
+        else:
+            driver.get('https://www.transfermarkt.com/transfers/saisontransfers/statistik?land_id=0&ausrichtung=&spielerposition_id=&altersklasse=&leihe=&transferfenster=&saison-id=0&plus=1&page='+str(page))
+        print(driver.current_url)
+        driver.maximize_window()
+
+        # wait for popup
+        #WebDriverWait(driver,10).until(EC.frame_to_be_available_and_switch_to_it((By.XPATH,'//iframe[@id="sp_message_iframe_382445"]')))
+
+        # click through popup
+        #popup = driver.find_element_by_xpath("//button[contains(@title,'ACCEPT ALL')]")
+        #popup.click()
+        #driver.switchTo().parentFrame()
+        #driver.switchTo().defaultContent()
+
+
+        time.sleep(1.5)
+
+        # get table
+        table_tr = driver.find_elements_by_xpath("//table[@class='items']/tbody/tr")
+        tr_len = len(table_tr)
+        for value in range(1,tr_len+1):
+                Name = driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[2]/table/tbody/tr[1]/td[2]/a").text
+                position = driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[2]/table/tbody/tr[2]/td").text
+                Age = driver.find_element_by_xpath("// *[ @ id = 'yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[3]").text
+                Nat1 = driver.find_element_by_xpath("// *[ @ id = 'yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[5]/img[1]").get_attribute("title")
+                try:
+                    Nat2 = driver.find_element_by_xpath("// *[ @ id = 'yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[5]/img[2]").get_attribute("title")
+                except :
+                    Nat2 = ""
+                club_from =driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[6]/table/tbody/tr[1]/td[2]/a").text
+                country_from=driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[6]/table/tbody/tr[2]/td/img").get_attribute("title")
+                try:
+                    League_From = driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[6]/table/tbody/tr[2]/td/a").text
+                except :
+                    League_From = ""
+                Country_To = driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[7]/table/tbody/tr[2]/td/img").get_attribute("title")
+                Club_To = driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[7]/table/tbody/tr[1]/td[2]/a").text
+                try:
+                    League_To =driver.find_element_by_xpath("//*[@id='yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[7]/table/tbody/tr[2]/td/a").text
+                except :
+                    League_To = ""
+                Fee = driver.find_element_by_xpath("// *[ @ id = 'yw0']/table/tbody/tr"+'['+str(value)+']'+"/td[8]").text
+
+                player = {
+                        'Player': Name,
+                        'Position': position,
+                        'Age': Age,
+                        'Nationality':Nat1,
+                        'Nationality2':Nat2,
+                        'Club_From':club_from,
+                        'country_from': country_from,
+                        'League_From': League_From,
+                        'Club_To': Club_To,
+                        'Country_To': Country_To,
+                        'League_To': League_To,
+                        'Fee': Fee,
+                }
+                data.append(player)
+        driver.quit()
+    df = pd.DataFrame(data)
+    df.to_excel('file.xlsx',index=False)
+
+get_pages(80)
